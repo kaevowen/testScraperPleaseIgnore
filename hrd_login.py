@@ -3,8 +3,6 @@ import json
 import os
 import re
 
-from bs4 import BeautifulSoup as bs
-
 RE_COMP = re.compile('[b\\/:*?"<>|\\t]')
 EXCEL_BASE_URL = "http://www.hrd.go.kr/hrdp/ps/ppsmo/excelDownAll0109P.do?"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,23 +26,4 @@ def chkLogin(ID, PW):
     if res['message'] == 'checkLoginId' or res['message'] == 'FAIL':
         return 0
 
-    elif not chkAuthKey(s):
-        return -1
-
-    else:
-        return 1
-
-
-def chkAuthKey(s):
-    ak = os.path.join(BASE_DIR, "authKey.key")
-    if not os.path.isfile(ak):
-        res = bs(s.get('https://www.hrd.go.kr/hrdp/ps/ppsho/PPSHO0100L.do').content, "html.parser")
-
-        try:
-            key = re.sub('\\s', '', res.select('table.view > tbody > tr > td')[-1].text)
-            with open(ak, "w+") as f:
-                f.write(key)
-        except IndexError:
-            return False
-
-    return True
+    return s
