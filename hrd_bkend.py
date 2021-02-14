@@ -10,6 +10,7 @@ RE_COMP = re.compile('[b\\/:*?"<>|\\t]')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DL_DIR = os.path.join(BASE_DIR, "result")
 EXCEL_BASE_URL = "http://www.hrd.go.kr/hrdp/ps/ppsmo/excelDownAll0109P.do?"
+FILE_DIR = os.path.join(DL_DIR, f"result.xlsx")
 
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,"
@@ -35,6 +36,9 @@ if not os.path.isdir(DL_DIR):
 def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, endDate):
     url = 'https://app.hrd.go.kr/hrdp/ti/ptiao/PTIAO0100L.do?'
     payload = ''
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "result"
 
     if ncsCode is not None:
         payload += f"ncs={ncsCode}"
@@ -57,10 +61,6 @@ def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, en
     reqbs = bs(req.content, "html.parser")
     pages = int(re.sub('[(),]', '', reqbs.select('span.count')[1].text)) // 100 + 2
     print(f"count : {reqbs.select('span.count')[1].text}, pages : {pages-1}")
-    FILE_DIR = os.path.join(DL_DIR, f"test.xlsx")
-
-    wb = openpyxl.load_workbook(FILE_DIR)
-    ws = wb[wb.sheetnames[0]]
 
     for i in range(1, pages):
         print("page : ", i)
@@ -98,20 +98,19 @@ def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, en
             print(title, subtitle, detail)
 
             # 업체명
-            tmp.append(re.sub('\s', '', detail_req_bs.find('p', {'class': 'add'}).text))
+            tmp.append(re.sub('\\s', '', detail_req_bs.find('p', {'class': 'add'}).text))
 
             # 과정명
-            tmp.append(re.sub('\s|모집마감', '', detail_req_bs.find('h4', {'class': 'tit'}).text))
+            tmp.append(re.sub('\\s|모집마감', '', detail_req_bs.find('h4', {'class': 'tit'}).text))
 
             # n회차 텍스트를 제외한 훈련기간
-            tmp.append(re.sub('\s|\(\d회차\)', '', detail_req_bs.select('li:nth-child(6) > span.con')[0].text))
+            tmp.append(re.sub('\\s|\(\\d회차\)', '', detail_req_bs.select('li:nth-child(6) > span.con')[0].text))
 
             # 최근회차
             training_time = detail_req_bs.select_one('li:nth-child(6) > span.con').text
-            print(re.findall('\\d{4}', training_time))
             recent_year = int(re.findall('\\d{4}', training_time)[0])
             recent_Time = int(re.findall('(\\d)', training_time)[0])
-            recent = int(re.sub('회차|~|\s|[\(\)]|\d{4}-\d{2}-\d{2}', '', training_time)[0]) - 1
+            recent = int(re.sub('회차|~|\\s|[\\(\\)]|\\d{4}-\\d{2}-\\d{2}', '', training_time)[0]) - 1
 
             gap_of_list = recent - len(detail_req_bs.select(f"dl tbody > tr:nth-child(2) > td")) - 2
 
@@ -119,7 +118,7 @@ def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, en
                 recent = 1
 
             # 훈련시간
-            tmp.append(re.sub('\d*일|,|총|시간', '', detail_req_bs.select('li:nth-child(7) > span.con')[0].text))
+            tmp.append(re.sub('\\d*일|,|총|시간', '', detail_req_bs.select('li:nth-child(7) > span.con')[0].text))
 
             # 수강인원
             try:
@@ -134,7 +133,7 @@ def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, en
 
             except ValueError:
                 sep_num = re.findall(
-                    '\d{1,3}',
+                    '\\d{1,3}',
                     detail_req_bs.select(f"dl:nth-child({recent}) tbody > tr:nth-child(2) > td")[0].text
                 )
 
@@ -154,7 +153,7 @@ def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, en
 
                 except ValueError:
                     sep_num = re.findall(
-                        '\d{1,3}',
+                        '\\d{1,3}',
                         detail_req_bs.select(f"dl:nth-child({gap_of_list}) tbody > tr:nth-child(2) > td")[0].text
                     )
 
@@ -167,22 +166,23 @@ def getDetail(session, keyword, cCode1, cCode2, ncsCode, areaCode, startDate, en
             try:
                 if len(detail_req_bs.select(f"dl:nth-child({recent}) tbody > tr > td")) != 4:
                     employee_percent = detail_req_bs.select(f"dl:nth-child({recent}) tbody > tr > td")
-                    tmp.append(re.sub('\s|\(\d{1,3}/\d{1,3}\)', '', employee_percent[3].text))
-                    tmp.append(re.sub('\s|\(\d{1,3}/\d{1,3}\)', '', employee_percent[4].text))
-                    tmp.append(re.sub('\s|\(\d{1,3}/\d{1,3}\)', '', employee_percent[5].text))
+                    tmp.append(re.sub('\\s|\\(\\d{1,3}/\\d{1,3}\\)', '', employee_percent[3].text))
+                    tmp.append(re.sub('\\s|\\(\\d{1,3}/\\d{1,3}\\)', '', employee_percent[4].text))
+                    tmp.append(re.sub('\\s|\\(\\d{1,3}/\\d{1,3}\\)', '', employee_percent[5].text))
 
             except IndexError:
                 if len(detail_req_bs.select(f"dl:nth-child({gap_of_list}) tbody > tr > td")) != 4:
                     employee_percent = detail_req_bs.select(f"dl:nth-child({gap_of_list}) tbody > tr > td")
-                    tmp.append(re.sub('\s|\(\d{1,3}/\d{1,3}\)', '', employee_percent[3].text))
-                    tmp.append(re.sub('\s|\(\d{1,3}/\d{1,3}\)', '', employee_percent[4].text))
-                    tmp.append(re.sub('\s|\(\d{1,3}/\d{1,3}\)', '', employee_percent[5].text))
+                    tmp.append(re.sub('\\s|\\(\\d{1,3}/\\d{1,3}\\)', '', employee_percent[3].text))
+                    tmp.append(re.sub('\\s|\\(\\d{1,3}/\\d{1,3}\\)', '', employee_percent[4].text))
+                    tmp.append(re.sub('\\s|\\(\\d{1,3}/\\d{1,3}\\)', '', employee_percent[5].text))
 
             ws.append(tmp)
-            wb.save(os.path.join(DL_DIR, 'result.xlsx'))
+            wb.save(filename=os.path.join(DL_DIR, "result.xlsx"))
             getExcel(session, title, subtitle, res[0], recent_year, recent_Time)
 
     os.startfile(DL_DIR)
+
 
 def getExcel(sess, title, subtitle, tracseId, recentYear, recentTme):
     args = f"tracseId={tracseId}&ncsYn=Y&pssrpYear={recentYear}&pssrpTme={recentTme}&" \

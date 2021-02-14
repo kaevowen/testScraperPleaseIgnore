@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>430</height>
+    <height>460</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>800</width>
-    <height>420</height>
+    <height>440</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>800</width>
-    <height>430</height>
+    <height>460</height>
    </size>
   </property>
   <property name="font">
@@ -508,6 +508,19 @@
       </layout>
      </item>
     </layout>
+   </widget>
+   <widget class="QProgressBar" name="progressBar">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>400</y>
+      <width>791</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
